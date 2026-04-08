@@ -8,7 +8,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'InventoryApp — Simple Inventory Management',
+  title: 'Drug InventoryApp',
   description:
     'Track, manage, and update your inventory items with a clean and simple dashboard for store owners and managers.',
   icons: {
