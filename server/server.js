@@ -11,6 +11,8 @@ app.use(cors());
 
 // Middleware to parse incoming JSON requests and make the data available in req.body
 app.use(express.json());
+// Body parser middleware to allow x-www-form-urlencoded data to be parsed in postman
+app.use(express.urlencoded({ extended: false }));
 
 //ROUTES
 app.use("/api", (await import("./routes/products.js")).default);

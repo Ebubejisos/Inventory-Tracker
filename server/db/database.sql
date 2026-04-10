@@ -2,7 +2,6 @@ CREATE TABLE drugs (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   brand TEXT,
-  batch_number TEXT,
   quantity INTEGER NOT NULL,
   expiry_date DATE NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

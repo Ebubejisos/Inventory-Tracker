@@ -4,7 +4,7 @@ import { body, param } from "express-validator";
 
 export const validateProductCreation = [
   body("name").notEmpty().withMessage("Product name is required"),
+  body("brand").notEmpty().withMessage("Brand is required"),
   body("quantity").isInt({ min: 0 }).withMessage("Quantity must be a non-negative integer"),
   body("expiry_date").isDate().withMessage("Expiry date must be a valid date"),
-  body("batch_number").isInt().withMessage("Batch number must be a number"),
 ];

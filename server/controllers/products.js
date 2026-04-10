@@ -2,26 +2,64 @@
 // Reads and writes to the SQLite database using the db module
 // returns a JSON res[ponse or an error message as appropriate
 import pool from "../db/index.js";
-
+/*
 const createProduct = async (req, res, next) => {
-  const { name, description, price } = req.body;
-  const [result] = await pool.execute("INSERT INTO products (name, description, price) VALUES (?, ?, ?)", [name, description, price]);
+  const { name, brand, batch_number, quantity, expiry_date } = req.body;
+  const [result] = await pool.execute("INSERT INTO drugs (name, brand, batch_number, quantity, expiry_date) VALUES (?, ?, ?, ?, ?)", [name, brand, batch_number, quantity, expiry_date]);
   res.status(201).json({ message: "Product created successfully", id: result.insertId });
 }
+  */
+
+// createProduct wrapped in a try catch block to handle errors and return appropriate responses that uses postgreSQL syntax similar to the one above
+const createProduct = async (req, res, next) => {
+  try {
+    const { name, brand, quantity, expiry_date } = req.body;
+    const result = await pool.query("INSERT INTO drugs (name, brand, quantity, expiry_date) VALUES ($1, $2, $3, $4) RETURNING id", [name, brand, quantity, expiry_date]);
+    res.status(201).json({ message: "Product created successfully", products: result.rows[0] });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    next(error);
+  }
+}
+
+
+
 
 const getProducts = async (req, res, next) => {
-  res.status(200).json([]);
+  // send get request to the database to retrieve all products and return them as a JSON response
+  const result = await pool.query("SELECT * FROM drugs");
+  res.status(200).json(result.rows);
 }
 
 const getProductById = async (req, res, next) => {
-  res.status(200).json({});
+  // send get request to the database to retrieve a product by its id and return it as a JSON response
+  const { id } = req.params;
+  const result = await pool.query("SELECT * FROM drugs WHERE id = $1", [id]);
+  if (result.rows.length === 0) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+  res.status(200).json(result.rows[0]);
+  // res.status(200).json({});
 }
 
 const updateProduct = async (req, res, next) => {
-  res.status(200).json({ message: "Product updated successfully" });
+  // send put request to the database to update a product by its id and return a success message as a JSON response
+  const { id } = req.params;
+  const { name, brand, quantity, expiry_date } = req.body;
+  const result = await pool.query("UPDATE drugs SET name = $1, brand = $2, quantity = $3, expiry_date = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING * ", [name, brand, quantity, expiry_date, id]);
+  if (result.rowCount === 0) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+  res.status(200).json(result.rows[0]);
 }
 
 const deleteProduct = async (req, res, next) => {
+  // send delete request to the database to delete a product by its id and return a success message as a JSON response
+  const { id } = req.params;
+  const result = await pool.query("DELETE FROM drugs WHERE id = $1", [id]);
+  if (result.rowCount === 0) {
+    return res.status(404).json({ message: "Product not found" });
+  }
   res.status(200).json({ message: "Product deleted successfully" });
 }
 

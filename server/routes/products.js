@@ -6,10 +6,10 @@ const router = express.Router();
 import { createProduct, getProducts, getProductById, updateProduct, deleteProduct } from "../controllers/products.js";
 import { validateProductCreation } from "../middleware/validation.js";
 
-router.post("/products", validateProductCreation, createProduct);
-router.get("/products", getProducts);
-router.get("/products/:id", getProductById);
-router.put("/products/:id", updateProduct);
-router.delete("/products/:id", deleteProduct);
+router.post("/items", validateProductCreation, createProduct);
+router.get("/items", getProducts);
+router.get("/items/:id", getProductById);
+router.put("/items/:id", updateProduct);
+router.delete("/items/:id", deleteProduct);
 
 export default router;
