@@ -64,7 +64,7 @@ export default function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
         </span>
       </td>
       <td className="px-4 py-3.5 text-slate-500 text-xs whitespace-nowrap">
-        {formatDate(item.dateAdded)}
+        {formatDate(item.expiry_date)}
       </td>
       <td className="px-4 py-3.5">
         <StockBadge quantity={item.quantity} />

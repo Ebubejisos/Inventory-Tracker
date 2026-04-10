@@ -1,11 +1,11 @@
 import React from 'react';
 import { Package, AlertTriangle, XCircle } from 'lucide-react';
-import Icon from '@/components/ui/AppIcon';
 
 interface KpiCardsProps {
   totalItems: number;
   lowStockCount: number;
   outOfStockCount: number;
+  closeToExpiryCount: number;
   loading: boolean;
 }
 
@@ -26,13 +26,14 @@ export default function KpiCards({
   totalItems,
   lowStockCount,
   outOfStockCount,
+  closeToExpiryCount,
   loading,
 }: KpiCardsProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {['kpi-sk-1', 'kpi-sk-2', 'kpi-sk-3'].map((k) => (
-          <SkeletonCard key={k} />
+        {Array.from({ length: 4 }).map((_, index) => (
+          <SkeletonCard key={`skeleton-${index}`} />
         ))}
       </div>
     );
@@ -74,7 +75,7 @@ export default function KpiCards({
     {
       id: 'kpi-close-to-expiry',
       label: 'Close to Expiry',
-      value: '0',
+      value: closeToExpiryCount.toString(),
       sub: 'items nearing expiry date',
       icon: AlertTriangle,
       iconBg: 'bg-amber-50',

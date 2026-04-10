@@ -74,7 +74,7 @@ export default function ItemList({
   onDelete,
   onRetry,
 }: ItemListProps) {
-  const [sortField, setSortField] = useState<keyof InventoryItem>('dateAdded');
+  const [sortField, setSortField] = useState<keyof InventoryItem>('expiry_date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -191,7 +191,7 @@ export default function ItemList({
               {[
                 { key: 'name', label: 'Product Name' },
                 { key: 'quantity', label: 'Quantity' },
-                { key: 'dateAdded', label: 'Date Added' },
+                { key: 'expiry_date', label: 'Expiry Date' },
               ].map((col) => (
                 <th
                   key={`th-${col.key}`}

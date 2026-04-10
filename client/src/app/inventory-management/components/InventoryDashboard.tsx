@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, use } from 'react';
 import { Toaster, toast } from 'sonner';
 import KpiCards from './KpiCards';
 import ItemList from './ItemList';
@@ -18,13 +18,24 @@ export interface InventoryItem {
   id: string | number;
   name: string;
   quantity: number;
-  dateAdded: string;
+  brand: string;
+  expiry_date: string;
 }
 
-export type FormValues = Omit<InventoryItem, 'id' | 'dateAdded'>;
+export interface InventorySummary {
+  total: number;
+  low_stock: number;
+  out_of_stock: number;
+  close_to_expiry: number;
+}
+
+export type FormValues = Omit<InventoryItem, 'id'>;
 
 export default function InventoryDashboard() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [summary, setSummary] = useState<InventorySummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,17 +69,34 @@ export default function InventoryDashboard() {
     }
   }, []);
 
+  // Backend integration: GET /items/summary
+  const fetchSummary = useCallback(async () => {
+    setSummaryLoading(true);
+    try {
+      const res = await axios.get<InventorySummary>(`${API_BASE}/api/items/summary`);
+      setSummary(res.data);
+    } catch {
+      toast.error('Failed to load inventory summary. KPIs will be unavailable.');
+      setSummary(null);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
 
   // Backend integration: POST /items
   const handleCreate = async (values: FormValues) => {
     setFormLoading(true);
     try {
-      const res = await axios.post<InventoryItem>(`${API_BASE}/items`, {
+      const res = await axios.post<InventoryItem>(`${API_BASE}/api/items`, {
         ...values,
-        dateAdded: new Date().toISOString(),
       });
       setItems((prev) => [res.data, ...prev]);
       toast.success(`"${values.name}" added to inventory.`);
@@ -85,7 +113,7 @@ export default function InventoryDashboard() {
     if (!editingItem) return;
     setFormLoading(true);
     try {
-      const res = await axios.put<InventoryItem>(`${API_BASE}/items/${editingItem.id}`, values);
+      const res = await axios.put<InventoryItem>(`${API_BASE}/api/items/${editingItem.id}`, values);
       setItems((prev) => prev.map((it) => (it.id === editingItem.id ? res.data : it)));
       toast.success(`"${values.name}" updated successfully.`);
       setEditingItem(null);
@@ -101,7 +129,7 @@ export default function InventoryDashboard() {
     if (!deletingItem) return;
     setDeleteLoading(true);
     try {
-      await axios.delete(`${API_BASE}/items/${deletingItem.id}`);
+      await axios.delete(`${API_BASE}/api/items/${deletingItem.id}`);
       setItems((prev) => prev.filter((it) => it.id !== deletingItem.id));
       toast.success(`"${deletingItem.name}" removed from inventory.`);
       setDeletingItem(null);
@@ -113,17 +141,13 @@ export default function InventoryDashboard() {
   };
 
   const filteredItems = items.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = item?.name?.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
     if (stockFilter === 'out-of-stock') return item.quantity === 0;
     if (stockFilter === 'low-stock') return item.quantity > 0 && item.quantity < 10;
     if (stockFilter === 'in-stock') return item.quantity >= 10;
     return true;
   });
-
-  const totalValue = 0;
-  const lowStockCount = items.filter((it) => it.quantity > 0 && it.quantity < 10).length;
-  const outOfStockCount = items.filter((it) => it.quantity === 0).length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -139,10 +163,11 @@ export default function InventoryDashboard() {
 
         <div className="mt-6">
           <KpiCards
-            totalItems={items.length}
-            lowStockCount={lowStockCount}
-            outOfStockCount={outOfStockCount}
-            loading={loading}
+            totalItems={summary?.total || 0}
+            lowStockCount={summary?.low_stock || 0}
+            outOfStockCount={summary?.out_of_stock || 0}
+            closeToExpiryCount={summary?.close_to_expiry || 0}
+            loading={summaryLoading || !summary}
           />
         </div>
 
@@ -193,21 +218,81 @@ export default function InventoryDashboard() {
 
 // Fallback mock data — used when backend is unreachable
 const MOCK_ITEMS: InventoryItem[] = [
-  { id: 'item-001', name: 'Wireless Keyboard', quantity: 24, dateAdded: '2026-01-15T08:00:00Z' },
-  { id: 'item-002', name: 'USB-C Hub 7-Port', quantity: 8, dateAdded: '2026-01-18T10:30:00Z' },
-  { id: 'item-003', name: 'Mechanical Mouse', quantity: 0, dateAdded: '2026-01-20T14:15:00Z' },
-  { id: 'item-004', name: '27" Monitor Stand', quantity: 5, dateAdded: '2026-02-02T09:00:00Z' },
-  { id: 'item-005', name: 'Laptop Sleeve 15"', quantity: 31, dateAdded: '2026-02-10T11:45:00Z' },
-  { id: 'item-006', name: 'Webcam 1080p', quantity: 3, dateAdded: '2026-02-14T16:00:00Z' },
-  { id: 'item-007', name: 'Desk Cable Organizer', quantity: 47, dateAdded: '2026-02-20T08:30:00Z' },
+  {
+    id: 'item-001',
+    name: 'Wireless Keyboard',
+    quantity: 24,
+    expiry_date: '2026-01-15T08:00:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-002',
+    name: 'USB-C Hub 7-Port',
+    quantity: 8,
+    expiry_date: '2026-01-18T10:30:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-003',
+    name: 'Mechanical Mouse',
+    quantity: 0,
+    expiry_date: '2026-01-20T14:15:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-004',
+    name: '27" Monitor Stand',
+    quantity: 5,
+    expiry_date: '2026-02-02T09:00:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-005',
+    name: 'Laptop Sleeve 15"',
+    quantity: 31,
+    expiry_date: '2026-02-10T11:45:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-006',
+    name: 'Webcam 1080p',
+    quantity: 3,
+    expiry_date: '2026-02-14T16:00:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-007',
+    name: 'Desk Cable Organizer',
+    quantity: 47,
+    expiry_date: '2026-02-20T08:30:00Z',
+    brand: '',
+  },
   {
     id: 'item-008',
     name: 'Noise-Cancelling Headset',
     quantity: 0,
-    dateAdded: '2026-03-01T13:00:00Z',
+    expiry_date: '2026-03-01T13:00:00Z',
+    brand: '',
   },
-  { id: 'item-009', name: 'HDMI 2.1 Cable 2m', quantity: 18, dateAdded: '2026-03-05T10:00:00Z' },
-  { id: 'item-010', name: 'Portable SSD 1TB', quantity: 7, dateAdded: '2026-03-12T15:30:00Z' },
-  { id: 'item-011', name: 'Ergonomic Wrist Rest', quantity: 22, dateAdded: '2026-03-18T09:15:00Z' },
-  { id: 'item-012', name: 'LED Desk Lamp', quantity: 2, dateAdded: '2026-03-25T11:00:00Z' },
+  {
+    id: 'item-010',
+    name: 'Portable SSD 1TB',
+    quantity: 7,
+    expiry_date: '2026-03-12T15:30:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-011',
+    name: 'Ergonomic Wrist Rest',
+    quantity: 22,
+    expiry_date: '2026-03-18T09:15:00Z',
+    brand: '',
+  },
+  {
+    id: 'item-012',
+    name: 'LED Desk Lamp',
+    quantity: 2,
+    expiry_date: '2026-03-25T11:00:00Z',
+    brand: '',
+  },
 ];

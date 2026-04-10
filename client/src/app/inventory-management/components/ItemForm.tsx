@@ -30,9 +30,11 @@ export default function ItemForm({ editingItem, loading, onSubmit, onClose }: It
       reset({
         name: editingItem.name,
         quantity: editingItem.quantity,
+        brand: editingItem.brand,
+        expiry_date: editingItem.expiry_date, // Format for date input
       });
     } else {
-      reset({ name: '', quantity: 0 });
+      reset({ name: '', quantity: 0, brand: '', expiry_date: '' });
     }
   }, [editingItem, reset]);
 
@@ -95,6 +97,28 @@ export default function ItemForm({ editingItem, loading, onSubmit, onClose }: It
               />
               {errors.name && <p className="mt-1.5 text-xs text-red-600">{errors.name.message}</p>}
             </div>
+            {/* brand name for item */}
+            <div>
+              <label htmlFor="item-brand" className="block text-sm font-medium text-slate-700 mb-1">
+                Brand Name
+              </label>
+              <input
+                id="item-brand"
+                type="text"
+                placeholder="e.g. Logitech"
+                className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-colors ${
+                  errors.brand
+                    ? 'border-red-400 focus:border-red-400'
+                    : 'border-slate-300 focus:border-blue-400'
+                }`}
+                {...register('brand', {
+                  maxLength: { value: 100, message: 'Brand name must be under 100 characters.' },
+                })}
+              />
+              {errors.brand && (
+                <p className="mt-1.5 text-xs text-red-600">{errors.brand.message}</p>
+              )}
+            </div>
 
             {/* Quantity + Price row */}
             <div className="grid grid-cols-2 gap-4">
@@ -129,6 +153,39 @@ export default function ItemForm({ editingItem, loading, onSubmit, onClose }: It
                   <p className="mt-1.5 text-xs text-red-600">{errors.quantity.message}</p>
                 )}
               </div>
+            </div>
+            {/* expiry date */}
+            <div>
+              <label
+                htmlFor="item-expiry"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Expiry Date
+              </label>
+              <input
+                id="item-expiry"
+                type="date"
+                className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-colors ${
+                  errors.expiry_date
+                    ? 'border-red-400 focus:border-red-400'
+                    : 'border-slate-300 focus:border-blue-400'
+                }`}
+                {...register('expiry_date', {
+                  validate: (value) => {
+                    if (!value) return 'Expiry date is required.';
+                    const selectedDate = new Date(value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (selectedDate < today) {
+                      return 'Expiry date cannot be in the past.';
+                    }
+                    return true;
+                  },
+                })}
+              />
+              {errors.expiry_date && (
+                <p className="mt-1.5 text-xs text-red-600">{errors.expiry_date.message}</p>
+              )}
             </div>
 
             {/* Required legend */}
