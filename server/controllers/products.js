@@ -33,6 +33,12 @@ const getProducts = async (req, res, next) => {
   res.status(200).json(result.rows);
 }
 
+const getProductSummary = async (req, res, next) => {
+  // send get request to the database to retrieve all product summaries returning (count: total, low stock (q < 10), out_of_stock (q = 0), close_to_expiry (today <= expiry_date < today + 90 days)) and return them as a JSON response
+  const result = await pool.query("SELECT COUNT(*) as total, COUNT(CASE WHEN quantity < 10 THEN 1 END) as low_stock, COUNT(CASE WHEN quantity = 0 THEN 1 END) as out_of_stock, COUNT(CASE WHEN expiry_date >= CURRENT_DATE AND expiry_date < CURRENT_DATE + INTERVAL '90 days' THEN 1 END) as close_to_expiry FROM drugs");
+  res.status(200).json(result.rows[0]);
+}
+
 const getProductById = async (req, res, next) => {
   // send get request to the database to retrieve a product by its id and return it as a JSON response
   const { id } = req.params;
@@ -65,4 +71,4 @@ const deleteProduct = async (req, res, next) => {
   res.status(200).json({ message: "Product deleted successfully" });
 }
 
-export { createProduct, getProducts, getProductById, updateProduct, deleteProduct };
+export { createProduct, getProducts, getProductById, updateProduct, deleteProduct, getProductSummary };

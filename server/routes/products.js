@@ -3,11 +3,12 @@
 import express from "express";
 const router = express.Router();
 
-import { createProduct, getProducts, getProductById, updateProduct, deleteProduct } from "../controllers/products.js";
+import { createProduct, getProducts, getProductById, updateProduct, deleteProduct, getProductSummary } from "../controllers/products.js";
 import { validateProductCreation } from "../middleware/validation.js";
 
 router.post("/items", validateProductCreation, createProduct);
 router.get("/items", getProducts);
+router.get("/items/summary", getProductSummary);
 router.get("/items/:id", getProductById);
 router.put("/items/:id", updateProduct);
 router.delete("/items/:id", deleteProduct);
