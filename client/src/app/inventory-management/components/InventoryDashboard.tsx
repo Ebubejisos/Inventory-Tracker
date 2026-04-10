@@ -12,7 +12,7 @@ import PageHeader from './PageHeader';
 // e.g. process.env.NEXT_PUBLIC_API_URL
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface InventoryItem {
   id: string | number;
@@ -45,11 +45,11 @@ export default function InventoryDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get<InventoryItem[]>(`${API_BASE}/items`);
+      const res = await axios.get<InventoryItem[]>(`${API_BASE}/api/items`);
       setItems(res.data);
     } catch {
       setError(
-        'Failed to load inventory items. Make sure the backend is running on http://localhost:5000.'
+        `Failed to load inventory items from ${API_BASE}. Make sure the backend is running on http://localhost:5000.`
       );
       // Fallback mock data so UI is usable without backend
       setItems(MOCK_ITEMS);
