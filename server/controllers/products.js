@@ -15,7 +15,8 @@ const createProduct = async (req, res, next) => {
   try {
     const { name, brand, quantity, expiry_date } = req.body;
     const result = await pool.query("INSERT INTO drugs (name, brand, quantity, expiry_date) VALUES ($1, $2, $3, $4) RETURNING id", [name, brand, quantity, expiry_date]);
-    res.status(201).json({ message: "Product created successfully", products: result.rows[0] });
+    console.log(result)
+    res.status(201).json({ message: "Product created successfully", items: result.rows[0] });
   } catch (error) {
     console.error("Error creating product:", error);
     next(error);
@@ -28,6 +29,7 @@ const createProduct = async (req, res, next) => {
 const getProducts = async (req, res, next) => {
   // send get request to the database to retrieve all products and return them as a JSON response
   const result = await pool.query("SELECT * FROM drugs");
+  console.log(result)
   res.status(200).json(result.rows);
 }
 
