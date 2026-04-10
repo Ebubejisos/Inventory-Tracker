@@ -15,7 +15,7 @@ export default function PageHeader({ onAddItem }: PageHeaderProps) {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 leading-tight">Inventory</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Manage your stock, quantities, and pricing
+            Manage your stock, quantities, and expiry dates all in one place
           </p>
         </div>
       </div>

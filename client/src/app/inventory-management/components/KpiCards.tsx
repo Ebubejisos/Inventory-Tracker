@@ -41,7 +41,7 @@ export default function KpiCards({
   const cards = [
     {
       id: 'kpi-total-items',
-      label: 'Total SKUs',
+      label: 'Total Items',
       value: totalItems.toString(),
       sub: 'unique products tracked',
       icon: Package,
@@ -70,6 +70,17 @@ export default function KpiCards({
       iconColor: outOfStockCount > 0 ? 'text-red-500' : 'text-slate-400',
       valueColor: outOfStockCount > 0 ? 'text-red-600' : 'text-slate-900',
       alert: outOfStockCount > 0,
+    },
+    {
+      id: 'kpi-close-to-expiry',
+      label: 'Close to Expiry',
+      value: '0',
+      sub: 'items nearing expiry date',
+      icon: AlertTriangle,
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-500',
+      valueColor: 'text-amber-600',
+      alert: false,
     },
   ];
 
