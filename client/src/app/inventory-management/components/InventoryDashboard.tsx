@@ -11,6 +11,7 @@ import PageHeader from './PageHeader';
 // Backend integration point: replace base URL with env var in production
 // e.g. process.env.NEXT_PUBLIC_API_URL
 import axios from 'axios';
+import { StockStatus } from '@/interfaces/products';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -40,9 +41,7 @@ export default function InventoryDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
-  const [stockFilter, setStockFilter] = useState<'all' | 'in-stock' | 'low-stock' | 'out-of-stock'>(
-    'all'
-  );
+  const [stockFilter, setStockFilter] = useState<StockStatus>(StockStatus.ALL);
 
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -56,18 +55,26 @@ export default function InventoryDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get<InventoryItem[]>(`${API_BASE}/api/items`);
+      const url = new URL(`${API_BASE}/api/items`);
+      if (search) url.searchParams.append('search', search);
+      if (stockFilter && stockFilter !== 'all') {
+        let status = '';
+        if (stockFilter === 'close-to-expiry') status = 'close_to_expiry';
+        else if (stockFilter === 'low-stock') status = 'low_stock';
+        else if (stockFilter === 'out-of-stock') status = 'out_of_stock';
+        url.searchParams.append('status', status);
+      }
+
+      const res = await axios.get<InventoryItem[]>(url.toString());
       setItems(res.data);
     } catch {
-      setError(
-        `Failed to load inventory items from ${API_BASE}. Make sure the backend is running on http://localhost:5000.`
-      );
+      setError(`Failed to load inventory items from ${API_BASE}`);
       // Fallback mock data so UI is usable without backend
       setItems(MOCK_ITEMS);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, stockFilter]);
 
   // Backend integration: GET /items/summary
   const fetchSummary = useCallback(async () => {
@@ -85,7 +92,7 @@ export default function InventoryDashboard() {
 
   useEffect(() => {
     fetchItems();
-  }, [fetchItems]);
+  }, [fetchItems, search, stockFilter]);
 
   useEffect(() => {
     fetchSummary();
@@ -100,6 +107,7 @@ export default function InventoryDashboard() {
       });
       setItems((prev) => [res.data, ...prev]);
       toast.success(`"${values.name}" added to inventory.`);
+      fetchItems(); // Refresh list to update summary counts
       setShowForm(false);
     } catch {
       toast.error('Failed to add item. Check your connection and try again.');
@@ -117,6 +125,7 @@ export default function InventoryDashboard() {
       setItems((prev) => prev.map((it) => (it.id === editingItem.id ? res.data : it)));
       toast.success(`"${values.name}" updated successfully.`);
       setEditingItem(null);
+      setShowForm(false);
     } catch {
       toast.error('Failed to update item. Check your connection and try again.');
     } finally {
@@ -139,15 +148,6 @@ export default function InventoryDashboard() {
       setDeleteLoading(false);
     }
   };
-
-  const filteredItems = items.filter((item) => {
-    const matchesSearch = item?.name?.toLowerCase().includes(search.toLowerCase());
-    if (!matchesSearch) return false;
-    if (stockFilter === 'out-of-stock') return item.quantity === 0;
-    if (stockFilter === 'low-stock') return item.quantity > 0 && item.quantity < 10;
-    if (stockFilter === 'in-stock') return item.quantity >= 10;
-    return true;
-  });
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -173,7 +173,7 @@ export default function InventoryDashboard() {
 
         <div className="mt-8">
           <ItemList
-            items={filteredItems}
+            items={items}
             loading={loading}
             error={error}
             search={search}

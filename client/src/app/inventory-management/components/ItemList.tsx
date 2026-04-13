@@ -4,28 +4,29 @@ import React, { useState } from 'react';
 import { Search, Filter, RefreshCw, PackageOpen } from 'lucide-react';
 import ItemRow from './ItemRow';
 import { InventoryItem } from './InventoryDashboard';
+import { StockStatus } from '@/interfaces/products';
 
 interface ItemListProps {
   items: InventoryItem[];
   loading: boolean;
   error: string | null;
   search: string;
-  stockFilter: 'all' | 'in-stock' | 'low-stock' | 'out-of-stock';
+  stockFilter: StockStatus;
   onSearchChange: (v: string) => void;
-  onStockFilterChange: (v: 'all' | 'in-stock' | 'low-stock' | 'out-of-stock') => void;
+  onStockFilterChange: (v: StockStatus) => void;
   onEdit: (item: InventoryItem) => void;
   onDelete: (item: InventoryItem) => void;
   onRetry: () => void;
 }
 
 const FILTER_OPTIONS: {
-  value: 'all' | 'in-stock' | 'low-stock' | 'out-of-stock';
+  value: StockStatus;
   label: string;
 }[] = [
-  { value: 'all', label: 'All Items' },
-  { value: 'in-stock', label: 'In Stock' },
-  { value: 'low-stock', label: 'Low Stock' },
-  { value: 'out-of-stock', label: 'Out of Stock' },
+  { value: StockStatus.ALL, label: 'All Items' },
+  { value: StockStatus.CLOSE_TO_EXPIRY, label: 'Close to expiry' },
+  { value: StockStatus.LOW_STOCK, label: 'Low Stock' },
+  { value: StockStatus.OUT_OF_STOCK, label: 'Out of Stock' },
 ];
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50];
@@ -33,7 +34,7 @@ const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50];
 function TableSkeleton() {
   return (
     <>
-      {['sk-r-1', 'sk-r-2', 'sk-r-3', 'sk-r-4', 'sk-r-5', 'sk-r-6'].map((k) => (
+      {Array.from({ length: 10 }).map((_, k) => (
         <tr key={k} className="animate-pulse border-b border-slate-100">
           <td className="px-4 py-3.5">
             <div className="h-3.5 w-36 bg-slate-200 rounded" />
@@ -185,11 +186,13 @@ export default function ItemList({
 
       {/* Table */}
       <div className="overflow-x-auto scrollbar-thin">
+        {/* include a new table row to include brand from inventory item */}
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
               {[
                 { key: 'name', label: 'Product Name' },
+                { key: 'brand', label: 'Brand' },
                 { key: 'quantity', label: 'Quantity' },
                 { key: 'expiry_date', label: 'Expiry Date' },
               ].map((col) => (
