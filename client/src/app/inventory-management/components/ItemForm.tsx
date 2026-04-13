@@ -78,12 +78,14 @@ export default function ItemForm({ editingItem, loading, onSubmit, onClose }: It
               <label htmlFor="item-name" className="block text-sm font-medium text-slate-700 mb-1">
                 Product Name <span className="text-red-500">*</span>
               </label>
-              <p className="text-xs text-slate-400 mb-1.5">Enter the full product or SKU name</p>
+              <p className="text-xs text-slate-400 mb-1.5">
+                Enter the full product name and strength where necessary{' '}
+              </p>
               <input
                 id="item-name"
                 type="text"
                 autoFocus
-                placeholder="e.g. Wireless Keyboard Pro"
+                placeholder="e.g. Amlodipine 10mg"
                 className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-colors ${
                   errors.name
                     ? 'border-red-400 focus:border-red-400'
@@ -105,7 +107,7 @@ export default function ItemForm({ editingItem, loading, onSubmit, onClose }: It
               <input
                 id="item-brand"
                 type="text"
-                placeholder="e.g. Logitech"
+                placeholder="e.g. Novartis"
                 className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-colors ${
                   errors.brand
                     ? 'border-red-400 focus:border-red-400'

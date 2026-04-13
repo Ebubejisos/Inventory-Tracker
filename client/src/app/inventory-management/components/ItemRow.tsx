@@ -56,11 +56,15 @@ export default function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
       <td className="px-4 py-3.5">
         <span className="font-medium text-slate-800">{item.name}</span>
       </td>
+      {/* brand */}
+      <td className="px-4 py-3.5">
+        <span className="font-medium text-slate-800">{item.brand}</span>
+      </td>
       <td className="px-4 py-3.5">
         <span
           className={`tabular-nums font-medium ${item.quantity === 0 ? 'text-red-600' : item.quantity < 10 ? 'text-amber-600' : 'text-slate-700'}`}
         >
-          {item.quantity.toLocaleString()}
+          {item.quantity}
         </span>
       </td>
       <td className="px-4 py-3.5 text-slate-500 text-xs whitespace-nowrap">
@@ -71,19 +75,20 @@ export default function ItemRow({ item, onEdit, onDelete }: ItemRowProps) {
       </td>
       <td className="px-4 py-3.5">
         <div
-          className={`flex items-center justify-end gap-1 transition-opacity duration-100 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+          className={`flex items-center justify-end gap-1 transition-opacity duration-100 ${hovered ? 'md:opacity-100' : 'md:opacity-0'}`}
         >
           <button
             onClick={() => onEdit(item)}
             title="Edit this item"
-            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            // re-write tailwind transition to work only in large screen size
+            className="p-1.5 md:text-slate-400 text-blue-600  md:hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors "
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={() => onDelete(item)}
             title="Delete this item — cannot be undone"
-            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-1.5 md:text-slate-400 text-red-600  hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           >
             <Trash2 size={14} />
           </button>

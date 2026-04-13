@@ -76,7 +76,7 @@ export default function KpiCards({
       id: 'kpi-close-to-expiry',
       label: 'Close to Expiry',
       value: closeToExpiryCount.toString(),
-      sub: 'items nearing expiry date',
+      sub: 'items expiring within 3 months',
       icon: AlertTriangle,
       iconBg: 'bg-amber-50',
       iconColor: 'text-amber-500',
