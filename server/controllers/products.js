@@ -27,9 +27,37 @@ const createProduct = async (req, res, next) => {
 
 
 const getProducts = async (req, res, next) => {
+  // resolve search term and filter by status (low_stock, out_of_stock, close_to_expiry) from query parameters
   // send get request to the database to retrieve all products and return them as a JSON response
-  const result = await pool.query("SELECT * FROM drugs");
-  console.log(result)
+  const { search, status, page, limit } = req.query;
+
+  let query = "SELECT * FROM drugs";
+  const params = [];
+
+  if (search) {
+    query += " WHERE name ILIKE $1 OR brand ILIKE $1";
+    params.push(`%${search}%`);
+  }
+
+  if (status) {
+    if (status === "low_stock") {
+      query += params.length > 0 ? " AND quantity < 10" : " WHERE quantity < 10";
+    } else if (status === "out_of_stock") {
+      query += params.length > 0 ? " AND quantity = 0" : " WHERE quantity = 0";
+    } else if (status === "close_to_expiry") {
+      query += params.length > 0 ? " AND expiry_date >= CURRENT_DATE AND expiry_date < CURRENT_DATE + INTERVAL '90 days'" : " WHERE expiry_date >= CURRENT_DATE AND expiry_date < CURRENT_DATE + INTERVAL '90 days'";
+    }
+  }
+
+  if (page && limit) {
+    const offset = (page - 1) * limit;
+    query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+  } else {
+    query += " ORDER BY created_at DESC";
+  }
+
+  const result = await pool.query(query, params);
   res.status(200).json(result.rows);
 }
 
