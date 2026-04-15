@@ -14,17 +14,20 @@ const createProduct = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   try {
     const { name, brand, quantity, expiry_date } = req.body;
-    const result = await pool.query("INSERT INTO drugs (name, brand, quantity, expiry_date) VALUES ($1, $2, $3, $4) RETURNING id", [name, brand, quantity, expiry_date]);
-    console.log(result)
-    res.status(201).json({ message: "Product created successfully", items: result.rows[0] });
+
+    const result = await pool.query(
+      `INSERT INTO drugs (name, brand, quantity, expiry_date) VALUES ($1, $2, $3, $4)
+      RETURNING *`,
+      [name, brand, quantity, expiry_date]
+    );
+
+    res.status(201).json(result.rows[0]); // ✅ clean response
+
   } catch (error) {
     console.error("Error creating product:", error);
     next(error);
   }
-}
-
-
-
+};
 
 const getProducts = async (req, res, next) => {
   // resolve search term and filter by status (low_stock, out_of_stock, close_to_expiry) from query parameters
