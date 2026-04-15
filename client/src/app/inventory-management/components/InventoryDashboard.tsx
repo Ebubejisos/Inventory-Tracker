@@ -49,32 +49,33 @@ export default function InventoryDashboard() {
 
   const [deletingItem, setDeletingItem] = useState<InventoryItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // add debounce state for search input to reduce API calls
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   // Backend integration: GET /items
-  const fetchItems = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const url = new URL(`${API_BASE}/api/items`);
-      if (search) url.searchParams.append('search', search);
-      if (stockFilter && stockFilter !== 'all') {
-        let status = '';
-        if (stockFilter === 'close-to-expiry') status = 'close_to_expiry';
-        else if (stockFilter === 'low-stock') status = 'low_stock';
-        else if (stockFilter === 'out-of-stock') status = 'out_of_stock';
-        url.searchParams.append('status', status);
-      }
+  const fetchItems = async (signal: AbortSignal) => {
+    const url = new URL(`${API_BASE}/api/items`);
 
-      const res = await axios.get<InventoryItem[]>(url.toString());
-      setItems(res.data);
-    } catch {
-      setError(`Failed to load inventory items from ${API_BASE}`);
-      // Fallback mock data so UI is usable without backend
-      setItems(MOCK_ITEMS);
-    } finally {
-      setLoading(false);
+    if (debouncedSearch) {
+      url.searchParams.append('search', debouncedSearch);
     }
-  }, [search, stockFilter]);
+
+    if (stockFilter && stockFilter !== 'all') {
+      let status = '';
+      if (stockFilter === 'close-to-expiry') status = 'close_to_expiry';
+      else if (stockFilter === 'low-stock') status = 'low_stock';
+      else if (stockFilter === 'out-of-stock') status = 'out_of_stock';
+
+      url.searchParams.append('status', status);
+    }
+
+    const res = await axios.get<InventoryItem[]>(url.toString(), { signal });
+    return res.data;
+  };
 
   // Backend integration: GET /items/summary
   const fetchSummary = useCallback(async () => {
@@ -91,12 +92,37 @@ export default function InventoryDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems, search, stockFilter]);
+    const controller = new AbortController();
+
+    const loadItems = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const data = await fetchItems(controller.signal);
+        setItems(data);
+      } catch (err: any) {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+          return;
+        }
+
+        setError(`Failed to load inventory items from ${API_BASE}`);
+        setItems(MOCK_ITEMS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadItems();
+
+    return () => {
+      controller.abort(); // 👈 cancels previous request
+    };
+  }, [debouncedSearch, stockFilter]);
 
   useEffect(() => {
     fetchSummary();
-  }, [fetchSummary]);
+  }, []);
 
   // Backend integration: POST /items
   const handleCreate = async (values: FormValues) => {
@@ -106,8 +132,9 @@ export default function InventoryDashboard() {
         ...values,
       });
       setItems((prev) => [res.data, ...prev]);
+      fetchSummary();
       toast.success(`"${values.name}" added to inventory.`);
-      fetchItems(); // Refresh list to update summary counts
+      // fetchItems(); // Refresh list to update summary counts
       setShowForm(false);
     } catch {
       toast.error('Failed to add item. Check your connection and try again.');
@@ -123,6 +150,7 @@ export default function InventoryDashboard() {
     try {
       const res = await axios.put<InventoryItem>(`${API_BASE}/api/items/${editingItem.id}`, values);
       setItems((prev) => prev.map((it) => (it.id === editingItem.id ? res.data : it)));
+      fetchSummary();
       toast.success(`"${values.name}" updated successfully.`);
       setEditingItem(null);
       setShowForm(false);
@@ -140,6 +168,7 @@ export default function InventoryDashboard() {
     try {
       await axios.delete(`${API_BASE}/api/items/${deletingItem.id}`);
       setItems((prev) => prev.filter((it) => it.id !== deletingItem.id));
+      fetchSummary();
       toast.success(`"${deletingItem.name}" removed from inventory.`);
       setDeletingItem(null);
     } catch {
@@ -185,7 +214,10 @@ export default function InventoryDashboard() {
               setShowForm(true);
             }}
             onDelete={setDeletingItem}
-            onRetry={fetchItems}
+            onRetry={() => {
+              const controller = new AbortController();
+              fetchItems(controller.signal);
+            }}
           />
         </div>
       </div>
