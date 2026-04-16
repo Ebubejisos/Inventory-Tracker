@@ -16,6 +16,9 @@ app.use(express.urlencoded({ extended: false }));
 
 //ROUTES
 app.use("/api", (await import("./routes/products.js")).default);
+app.get("/", (req, res) => {
+  res.send("Pharmacy Inventory API is running 🚀");
+});
 
 app.listen(port, () => {
   console.log(`server is running at port ${port}`)
